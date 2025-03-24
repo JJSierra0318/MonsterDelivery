@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, json
 import logging
+import pika
 
 app = Flask(__name__)
 
@@ -7,6 +8,16 @@ logging.basicConfig(level=logging.INFO)
 
 def publish_order(order_data):
     logging.info(f"Order received: {order_data}")
+    url = "amqps://fojwrukx:ccIIphYJo1e0NTQ5olI1zSonirsuRAFs@fly.rmq.cloudamqp.com/fojwrukx"
+    params = pika.URLParameters(url)
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+    channel.queue_declare(queue='order')
+    channel.basic_publish(exchange='',
+                      routing_key='order',
+                      body=json.dumps(order_data))
+    print(" [x] Sent order data to queue broker")
+    connection.close()
     return True
 
 @app.route('/orders', methods=['POST'])
